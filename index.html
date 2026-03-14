@@ -49,11 +49,12 @@ h1 em{font-style:normal;background:linear-gradient(135deg,var(--a),var(--a2),var
 /* UPLOAD ZONE */
 .upload-area{margin-bottom:18px}
 /* upload via label */
-#fileIn,#fileIn2{display:none}
-.upload-label{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;padding:20px 24px;background:var(--s);border:2px solid var(--b);border-radius:var(--r);cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--t)}
-.upload-label:hover{border-color:var(--a);background:rgba(108,71,255,.06);color:var(--a)}
-.upload-label-icon{font-size:1.6rem;flex-shrink:0}
-.upload-label-sub{font-size:.7rem;color:var(--mu);font-family:'Inter',sans-serif;font-weight:400;margin-top:3px}
+/* input file visible y estilizado — funciona en Android */
+.file-input-btn{display:block;width:100%;padding:22px 24px;background:var(--s);border:2px solid var(--b);border-radius:var(--r);cursor:pointer;transition:all .2s;font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--t);text-align:center;appearance:none;-webkit-appearance:none;outline:none}
+.file-input-btn::-webkit-file-upload-button{display:none}
+.file-input-btn::before{content:'📂  Seleccionar imagen desde galería';display:block;font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;color:var(--t)}
+.file-input-wrap{position:relative;margin-bottom:0}
+.file-input-sub{text-align:center;font-size:.7rem;color:var(--mu);margin-top:8px;font-family:'Inter',sans-serif}
 /* preview */
 .img-preview-wrap{display:none;border-radius:var(--r);overflow:hidden;border:1px solid var(--b);background:var(--s)}
 .img-preview-wrap img{width:100%;max-height:380px;object-fit:contain;display:block}
@@ -238,26 +239,25 @@ h1 em{font-style:normal;background:linear-gradient(135deg,var(--a),var(--a2),var
   <!-- UPLOAD -->
   <div class="sl">03 — Subir Creativo</div>
   <div class="upload-area">
-    <!-- inputs reales ocultos -->
-    <input type="file" id="fileIn" accept="image/*" onchange="loadFile(event)">
-    <input type="file" id="fileIn2" accept="image/*" onchange="loadFile(event)">
 
     <!-- IMAGEN / VIDEO ÚNICA -->
     <div id="zone-single">
-      <!-- Label estilizado apunta al input — sin JS click() -->
-      <label for="fileIn" class="upload-label" id="uploadLabel">
-        <span class="upload-label-icon">📂</span>
-        <div>
-          <div>Seleccionar imagen desde tu dispositivo</div>
-          <div class="upload-label-sub">JPG · PNG · WEBP · GIF · Máx 20MB</div>
-        </div>
-      </label>
+      <div class="file-input-wrap" id="uploadWrapper">
+        <input
+          type="file"
+          id="fileIn"
+          accept="image/*"
+          class="file-input-btn"
+          onchange="loadFile(event)"
+        >
+        <div class="file-input-sub">JPG · PNG · WEBP · GIF · Máx 20MB</div>
+      </div>
       <!-- Preview post-carga -->
       <div class="img-preview-wrap" id="imgPreviewWrap">
         <img id="dzImg" src="" alt="preview">
         <div class="img-preview-bar">
           <span class="img-preview-name" id="imgName">imagen.jpg</span>
-          <label for="fileIn2" class="change-label">🔄 Cambiar imagen</label>
+          <input type="file" accept="image/*" onchange="loadFile(event)" class="change-label" style="width:auto;padding:5px 11px;font-size:.72rem;font-weight:700;color:var(--a);background:none;border:1px solid rgba(108,71,255,.4);border-radius:6px;cursor:pointer" value="">
         </div>
       </div>
     </div>
@@ -265,7 +265,7 @@ h1 em{font-style:normal;background:linear-gradient(135deg,var(--a),var(--a2),var
     <!-- CARRUSEL -->
     <div id="zone-carousel" style="display:none">
       <div class="carousel-grid" id="carGrid"></div>
-      <div class="c-count" id="cCount">0 / 4 tarjetas · Haz clic en cada slot para subir</div>
+      <div class="c-count" id="cCount">0 / 4 tarjetas · Toca cada slot para subir</div>
     </div>
   </div>
 
@@ -390,7 +390,7 @@ function processImg(file, slot){
     const mime=file.type;
     if(slot==='main'){
       mainImg={base64,mime,url:dataUrl,name:file.name};
-      document.getElementById('uploadLabel').style.display='none';
+      document.getElementById('uploadWrapper').style.display='none';
       const wrap=document.getElementById('imgPreviewWrap');
       wrap.style.display='block';
       document.getElementById('dzImg').src=dataUrl;
@@ -508,7 +508,7 @@ Responde ÚNICAMENTE con JSON válido. Sin texto extra. Sin markdown. Sin backti
 
     const r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json'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,
+      headers:{'Content-Type':'application/json','x-api-key':'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','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify(body)
     });
 
@@ -611,7 +611,7 @@ function copyR(){
 function doReset(){
   mainImg=null;carImgs=[null,null,null,null];
   document.getElementById('res').classList.remove('on');
-  document.getElementById('uploadLabel').style.display='flex';
+  document.getElementById('uploadWrapper').style.display='block';
   document.getElementById('imgPreviewWrap').style.display='none';
   document.getElementById('dzImg').src='';
   document.getElementById('fileIn').value='';
