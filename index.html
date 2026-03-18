@@ -586,14 +586,30 @@ Responde SOLO con JSON válido, sin markdown, sin texto extra:
 Rellena TODOS los valores basándote en lo que REALMENTE ves en el creativo. Scores variables 10-95. Grade: S(90+), A(75-89), B(60-74), C(45-59), D(<45). Las métricas predichas deben reflejar honestamente la calidad visual del anuncio.`;
 
   try{
-    const body={model:'claude-sonnet-4-20250514',max_tokens:5000,messages:[{role:'user',content:[...imgBlocks,{type:'text',text:prompt}]}]};
+    const body={model:'claude-sonnet-4-20250514',max_tokens:8000,messages:[{role:'user',content:[...imgBlocks,{type:'text',text:prompt}]}]};
     const resp=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    if(!resp.ok){const e=await resp.json();throw new Error(e.error?.message||'Error '+resp.status);}
+    if(!resp.ok){const e=await resp.json().catch(()=>({}));throw new Error(e.error?.message||'Error '+resp.status);}
     const data=await resp.json();
     const txt=(data.content||[]).map(x=>x.text||'').join('');
+    console.log('Response length:',txt.length);
     let result;
-    try{const c=txt.replace(/```json\n?|```\n?/g,'').trim();result=JSON.parse(c.substring(c.indexOf('{'),c.lastIndexOf('}')+1));}
-    catch(e){console.error('Parse error:',txt.substring(0,400));throw new Error('Error procesando respuesta. Intenta de nuevo.');}
+    try{
+      const c=txt.replace(/```json\n?|```\n?/g,'').trim();
+      const start=c.indexOf('{');
+      const end=c.lastIndexOf('}');
+      if(start===-1||end===-1)throw new Error('No JSON found');
+      result=JSON.parse(c.substring(start,end+1));
+    }catch(e){
+      console.error('Parse error:',e.message,'\nText:',txt.substring(0,500));
+      // Try to extract partial JSON
+      try{
+        const partial=txt.substring(txt.indexOf('{'));
+        // Fix incomplete JSON by finding last complete field
+        result=JSON.parse(partial);
+      }catch(e2){
+        throw new Error('La IA devolvió una respuesta incompleta. Por favor intenta de nuevo.');
+      }
+    }
     document.getElementById(steps[6]).classList.add('done');
     await new Promise(r=>setTimeout(r,300));
     document.getElementById('load').classList.remove('on');
